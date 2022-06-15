@@ -64,8 +64,8 @@ impl<F: FieldExt> FiboChip<F> {
     pub fn assign_first_row(
         &self,
         mut layouter: impl Layouter<F>,
-        a: Option<F>,
-        b: Option<F>,
+        a: Value<F>,
+        b: Value<F>,
     ) -> Result<(ACell<F>, ACell<F>, ACell<F>), Error>{
         layouter.assign_region(
             || "first row",
@@ -76,23 +76,23 @@ impl<F: FieldExt> FiboChip<F> {
                     || "a",
                     self.config.advice[0],
                     0,
-                    || a.ok_or(Error::Synthesis),
+                    || a,
                 ).map(ACell)?;
 
                 let b_cell = region.assign_advice(
                     || "b",
                     self.config.advice[1],
                     0,
-                    || b.ok_or(Error::Synthesis),
+                    || b,
                 ).map(ACell)?;
 
-                let c_val = a.and_then(|a| b.map(|b| a + b));
+                let c_val = a + b;
 
                 let c_cell = region.assign_advice(
                     || "c",
                     self.config.advice[2],
                     0,
-                    || c_val.ok_or(Error::Synthesis),
+                    || c_val,
                 ).map(ACell)?;
 
                 Ok((a_cell, b_cell, c_cell))
@@ -113,17 +113,13 @@ impl<F: FieldExt> FiboChip<F> {
                 prev_b.0.copy_advice(|| "a", &mut region, self.config.advice[0], 0)?;
                 prev_c.0.copy_advice(|| "b", &mut region, self.config.advice[1], 0)?;
 
-                let c_val = prev_b.0.value().and_then(
-                    |b| {
-                        prev_c.0.value().map(|c| *b + *c)
-                    }
-                );
+                let c_val = prev_b.0.value().copied() + prev_c.0.value();
 
                 let c_cell = region.assign_advice(
                     || "c",
                     self.config.advice[2],
                     0,
-                    || c_val.ok_or(Error::Synthesis),
+                    || c_val,
                 ).map(ACell)?;
 
                 Ok(c_cell)
@@ -143,8 +139,8 @@ impl<F: FieldExt> FiboChip<F> {
 
 #[derive(Default)]
 struct MyCircuit<F> {
-    pub a: Option<F>,
-    pub b: Option<F>,
+    pub a: Value<F>,
+    pub b: Value<F>,
 }
 
 impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
@@ -201,8 +197,8 @@ fn main() {
     let out = Fp::from(55); // F[9]
 
     let circuit = MyCircuit {
-        a: Some(a),
-        b: Some(b),
+        a: Value::known(a),
+        b: Value::known(b),
     };
 
     let mut public_input = vec![a, b, out];

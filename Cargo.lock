@@ -151,8 +151,7 @@ dependencies = [
 [[package]]
 name = "halo2_proofs"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e925780549adee8364c7f2b685c753f6f3df23bde520c67416e93bf615933760"
+source = "git+https://github.com/zcash/halo2.git?rev=a898d65ae3ad3d41987666f6a03cfc15edae01c4#a898d65ae3ad3d41987666f6a03cfc15edae01c4"
 dependencies = [
  "blake2b_simd",
  "ff",
