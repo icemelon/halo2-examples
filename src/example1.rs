@@ -4,7 +4,6 @@ use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::*,
     plonk::*, poly::Rotation,
-    pasta::Fp, dev::MockProver,
 };
 
 #[derive(Debug, Clone)]
@@ -14,7 +13,7 @@ struct ACell<F: FieldExt>(AssignedCell<F, F>);
 struct FiboConfig {
     pub advice: [Column<Advice>; 3],
     pub selector: Selector,
-    pub instance: Column<Instance>
+    pub instance: Column<Instance>,
 }
 
 struct FiboChip<F: FieldExt> {
@@ -30,12 +29,12 @@ impl<F: FieldExt> FiboChip<F> {
     pub fn configure(
         meta: &mut ConstraintSystem<F>,
         advice: [Column<Advice>; 3],
+        instance: Column<Instance>,
     ) -> FiboConfig {
         let col_a = advice[0];
         let col_b = advice[1];
         let col_c = advice[2];
         let selector = meta.selector();
-        let instance = meta.instance_column();
 
         meta.enable_equality(col_a);
         meta.enable_equality(col_b);
@@ -64,8 +63,8 @@ impl<F: FieldExt> FiboChip<F> {
     pub fn assign_first_row(
         &self,
         mut layouter: impl Layouter<F>,
-        a: Option<F>,
-        b: Option<F>,
+        a: Value<F>,
+        b: Value<F>,
     ) -> Result<(ACell<F>, ACell<F>, ACell<F>), Error>{
         layouter.assign_region(
             || "first row",
@@ -76,23 +75,21 @@ impl<F: FieldExt> FiboChip<F> {
                     || "a",
                     self.config.advice[0],
                     0,
-                    || a.ok_or(Error::Synthesis),
+                    || a,
                 ).map(ACell)?;
 
                 let b_cell = region.assign_advice(
                     || "b",
                     self.config.advice[1],
                     0,
-                    || b.ok_or(Error::Synthesis),
+                    || b,
                 ).map(ACell)?;
-
-                let c_val = a.and_then(|a| b.map(|b| a + b));
 
                 let c_cell = region.assign_advice(
                     || "c",
                     self.config.advice[2],
                     0,
-                    || c_val.ok_or(Error::Synthesis),
+                    || a + b,
                 ).map(ACell)?;
 
                 Ok((a_cell, b_cell, c_cell))
@@ -113,17 +110,13 @@ impl<F: FieldExt> FiboChip<F> {
                 prev_b.0.copy_advice(|| "a", &mut region, self.config.advice[0], 0)?;
                 prev_c.0.copy_advice(|| "b", &mut region, self.config.advice[1], 0)?;
 
-                let c_val = prev_b.0.value().and_then(
-                    |b| {
-                        prev_c.0.value().map(|c| *b + *c)
-                    }
-                );
+                let c_val = prev_b.0.value().copied() + prev_c.0.value();
 
                 let c_cell = region.assign_advice(
                     || "c",
                     self.config.advice[2],
                     0,
-                    || c_val.ok_or(Error::Synthesis),
+                    || c_val,
                 ).map(ACell)?;
 
                 Ok(c_cell)
@@ -135,7 +128,7 @@ impl<F: FieldExt> FiboChip<F> {
         &self,
         mut layouter: impl Layouter<F>,
         cell: &ACell<F>,
-        row: usize
+        row: usize,
     ) -> Result<(), Error> {
         layouter.constrain_instance(cell.0.cell(), self.config.instance, row)
     }
@@ -143,8 +136,8 @@ impl<F: FieldExt> FiboChip<F> {
 
 #[derive(Default)]
 struct MyCircuit<F> {
-    pub a: Option<F>,
-    pub b: Option<F>,
+    pub a: Value<F>,
+    pub b: Value<F>,
 }
 
 impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
@@ -159,7 +152,8 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
         let col_a = meta.advice_column();
         let col_b = meta.advice_column();
         let col_c = meta.advice_column();
-        FiboChip::configure(meta, [col_a, col_b, col_c])
+        let instance = meta.instance_column();
+        FiboChip::configure(meta, [col_a, col_b, col_c], instance)
     }
 
     fn synthesize(
@@ -187,31 +181,53 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
             prev_c = c_cell;
         }
 
-        chip.expose_public(layouter.namespace(|| "output"), &prev_c, 2)?;
+        chip.expose_public(layouter.namespace(|| "out"), &prev_c, 2)?;
 
         Ok(())
     }
 }
 
-fn main() {
-    let k = 4;
+mod tests {
+    use super::MyCircuit;
+    use halo2_proofs::{pasta::Fp, circuit::Value, dev::MockProver};
 
-    let a = Fp::from(1); // F[0]
-    let b = Fp::from(1); // F[1]
-    let out = Fp::from(55); // F[9]
+    #[test]
+    fn test_example1() {
+        let k = 4;
 
-    let circuit = MyCircuit {
-        a: Some(a),
-        b: Some(b),
-    };
+        let a = Fp::from(1); // F[0]
+        let b = Fp::from(1); // F[1]
+        let out = Fp::from(55); // F[9]
 
-    let mut public_input = vec![a, b, out];
+        let circuit = MyCircuit {
+            a: Value::known(a),
+            b: Value::known(b),
+        };
 
-    let prover = MockProver::run(k, &circuit, vec![public_input.clone()]).unwrap();
-    prover.assert_satisfied();
+        let mut public_input = vec![a, b, out];
 
-    public_input[2] += Fp::one();
-    let prover = MockProver::run(k, &circuit, vec![public_input.clone()]).unwrap();
-    // uncomment the following line and the assert will fail
-    // prover.assert_satisfied();
+        let prover = MockProver::run(k, &circuit, vec![public_input.clone()]).unwrap();
+        prover.assert_satisfied();
+
+        public_input[2] += Fp::one();
+        let prover = MockProver::run(k, &circuit, vec![public_input]).unwrap();
+        // uncomment the following line and the assert will fail
+        // prover.assert_satisfied();
+    }
+
+
+    #[cfg(feature = "dev-graph")]
+    #[test]
+    fn plot_fibo1() {
+        use plotters::prelude::*;
+
+        let root = BitMapBackend::new("fib-1-layout.png", (1024, 3096)).into_drawing_area();
+        root.fill(&WHITE).unwrap();
+        let root = root.titled("Fib 1 Layout", ("sans-serif", 60)).unwrap();
+
+        let circuit = MyCircuit::<Fp> { a: Value::unknown(), b: Value::unknown() };
+        halo2_proofs::dev::CircuitLayout::default()
+            .render(4, &circuit, &root)
+            .unwrap();
+    }
 }
