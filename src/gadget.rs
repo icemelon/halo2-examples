@@ -1,3 +1,3 @@
 mod is_zero;
 
-pub use is_zero::{IsZeroConfig, IsZeroChip};
+pub use is_zero::{IsZeroChip, IsZeroConfig};
