@@ -6,7 +6,7 @@ pub struct IsZeroConfig<F> {
     pub is_zero_expr: Expression<F>,
 }
 
-impl<F: FieldExt> IsZeroChip<F> {
+impl<F: FieldExt> IsZeroConfig<F> {
     pub fn expr(&self) -> Expression<F> {
         self.is_zero_expr.clone()
     }
