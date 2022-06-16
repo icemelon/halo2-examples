@@ -1,6 +1,11 @@
 use gadget::{IsZeroChip, IsZeroConfig};
 use halo2_proofs::{
-    arithmetic::FieldExt, circuit::*, dev::MockProver, pasta::Fp, plonk::*, poly::Rotation,
+    arithmetic::FieldExt,
+    circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
+    dev::MockProver,
+    pasta::Fp,
+    plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Expression, Selector},
+    poly::Rotation,
 };
 
 #[derive(Debug, Clone)]
@@ -103,11 +108,7 @@ impl<F: FieldExt> Circuit<F> for FunctionCircuit<F> {
         FunctionChip::configure(meta)
     }
 
-    fn synthesize(
-        &self,
-        config: Self::Config,
-        layouter: impl Layouter<F>,
-    ) -> Result<(), Error> {
+    fn synthesize(&self, config: Self::Config, layouter: impl Layouter<F>) -> Result<(), Error> {
         let chip = FunctionChip::construct(config);
         chip.assign(layouter, self.a, self.b, self.c)?;
         Ok(())
