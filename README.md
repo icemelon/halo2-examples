@@ -19,6 +19,6 @@ cargo test -- --nocapture test_example3
 
 Plot the circuit layout
 ```
-cargo test --all-features -- --nocapture test_example1
-cargo test --all-features -- --nocapture test_example2
+cargo test --all-features -- --nocapture plot_fibo1
+cargo test --all-features -- --nocapture plot_fibo2
 ```
