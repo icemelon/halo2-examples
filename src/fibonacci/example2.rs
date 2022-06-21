@@ -1,10 +1,5 @@
-use std::{marker::PhantomData};
-use halo2_proofs::{
-    arithmetic::FieldExt,
-    circuit::*,
-    plonk::*,
-    poly::Rotation,
-};
+use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
 struct ACell<F: FieldExt>(AssignedCell<F, F>);
@@ -23,7 +18,10 @@ struct FiboChip<F: FieldExt> {
 
 impl<F: FieldExt> FiboChip<F> {
     pub fn construct(config: FiboConfig) -> Self {
-        Self { config, _marker: PhantomData }
+        Self {
+            config,
+            _marker: PhantomData,
+        }
     }
 
     pub fn configure(
@@ -61,7 +59,7 @@ impl<F: FieldExt> FiboChip<F> {
         &self,
         mut layouter: impl Layouter<F>,
         nrows: usize,
-    ) -> Result<AssignedCell<F, F>, Error>{
+    ) -> Result<AssignedCell<F, F>, Error> {
         layouter.assign_region(
             || "entire fibonacci table",
             |mut region| {
@@ -69,9 +67,19 @@ impl<F: FieldExt> FiboChip<F> {
                 self.config.selector.enable(&mut region, 1)?;
 
                 let mut a_cell = region.assign_advice_from_instance(
-                    || "1", self.config.instance, 0, self.config.advice, 0)?;
+                    || "1",
+                    self.config.instance,
+                    0,
+                    self.config.advice,
+                    0,
+                )?;
                 let mut b_cell = region.assign_advice_from_instance(
-                    || "1", self.config.instance, 1, self.config.advice, 1)?;
+                    || "1",
+                    self.config.instance,
+                    1,
+                    self.config.advice,
+                    1,
+                )?;
 
                 for row in 2..nrows {
                     if row < nrows - 2 {
@@ -90,7 +98,8 @@ impl<F: FieldExt> FiboChip<F> {
                 }
 
                 Ok(b_cell)
-        })
+            },
+        )
     }
 
     pub fn expose_public(
@@ -130,11 +139,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     ) -> Result<(), Error> {
         let chip = FiboChip::construct(config);
 
-        let out_cell = chip.assign(
-            layouter.namespace(|| "entire table"),
-            10,
-        )?;
-
+        let out_cell = chip.assign(layouter.namespace(|| "entire table"), 10)?;
 
         chip.expose_public(layouter.namespace(|| "out"), out_cell, 2)?;
 
@@ -144,7 +149,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
 
 mod tests {
     use super::MyCircuit;
-    use halo2_proofs::{pasta::Fp, circuit::Value, dev::MockProver};
+    use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
 
     #[test]
     fn test_example2() {

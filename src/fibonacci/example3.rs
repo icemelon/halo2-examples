@@ -1,3 +1,4 @@
+use crate::is_zero::{IsZeroChip, IsZeroConfig};
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
@@ -6,7 +7,6 @@ use halo2_proofs::{
     plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Expression, Selector},
     poly::Rotation,
 };
-use crate::is_zero::{IsZeroChip, IsZeroConfig};
 
 #[derive(Debug, Clone)]
 struct FunctionConfig<F: FieldExt> {

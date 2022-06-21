@@ -1,10 +1,6 @@
-use std::{marker::PhantomData};
+use std::marker::PhantomData;
 
-use halo2_proofs::{
-    arithmetic::FieldExt,
-    circuit::*,
-    plonk::*, poly::Rotation,
-};
+use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Debug, Clone)]
 struct ACell<F: FieldExt>(AssignedCell<F, F>);
@@ -23,7 +19,10 @@ struct FiboChip<F: FieldExt> {
 
 impl<F: FieldExt> FiboChip<F> {
     pub fn construct(config: FiboConfig) -> Self {
-        Self { config, _marker: PhantomData }
+        Self {
+            config,
+            _marker: PhantomData,
+        }
     }
 
     pub fn configure(
@@ -65,35 +64,27 @@ impl<F: FieldExt> FiboChip<F> {
         mut layouter: impl Layouter<F>,
         a: Value<F>,
         b: Value<F>,
-    ) -> Result<(ACell<F>, ACell<F>, ACell<F>), Error>{
+    ) -> Result<(ACell<F>, ACell<F>, ACell<F>), Error> {
         layouter.assign_region(
             || "first row",
             |mut region| {
                 self.config.selector.enable(&mut region, 0)?;
 
-                let a_cell = region.assign_advice(
-                    || "a",
-                    self.config.advice[0],
-                    0,
-                    || a,
-                ).map(ACell)?;
+                let a_cell = region
+                    .assign_advice(|| "a", self.config.advice[0], 0, || a)
+                    .map(ACell)?;
 
-                let b_cell = region.assign_advice(
-                    || "b",
-                    self.config.advice[1],
-                    0,
-                    || b,
-                ).map(ACell)?;
+                let b_cell = region
+                    .assign_advice(|| "b", self.config.advice[1], 0, || b)
+                    .map(ACell)?;
 
-                let c_cell = region.assign_advice(
-                    || "c",
-                    self.config.advice[2],
-                    0,
-                    || a + b,
-                ).map(ACell)?;
+                let c_cell = region
+                    .assign_advice(|| "c", self.config.advice[2], 0, || a + b)
+                    .map(ACell)?;
 
                 Ok((a_cell, b_cell, c_cell))
-        })
+            },
+        )
     }
 
     pub fn assign_row(
@@ -107,20 +98,21 @@ impl<F: FieldExt> FiboChip<F> {
             |mut region| {
                 self.config.selector.enable(&mut region, 0)?;
 
-                prev_b.0.copy_advice(|| "a", &mut region, self.config.advice[0], 0)?;
-                prev_c.0.copy_advice(|| "b", &mut region, self.config.advice[1], 0)?;
+                prev_b
+                    .0
+                    .copy_advice(|| "a", &mut region, self.config.advice[0], 0)?;
+                prev_c
+                    .0
+                    .copy_advice(|| "b", &mut region, self.config.advice[1], 0)?;
 
                 let c_val = prev_b.0.value().copied() + prev_c.0.value();
 
-                let c_cell = region.assign_advice(
-                    || "c",
-                    self.config.advice[2],
-                    0,
-                    || c_val,
-                ).map(ACell)?;
+                let c_cell = region
+                    .assign_advice(|| "c", self.config.advice[2], 0, || c_val)
+                    .map(ACell)?;
 
                 Ok(c_cell)
-            }
+            },
         )
     }
 
@@ -163,20 +155,14 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     ) -> Result<(), Error> {
         let chip = FiboChip::construct(config);
 
-        let (prev_a, mut prev_b, mut prev_c) = chip.assign_first_row(
-            layouter.namespace(|| "first row"),
-            self.a, self.b,
-        )?;
+        let (prev_a, mut prev_b, mut prev_c) =
+            chip.assign_first_row(layouter.namespace(|| "first row"), self.a, self.b)?;
 
         chip.expose_public(layouter.namespace(|| "private a"), &prev_a, 0)?;
         chip.expose_public(layouter.namespace(|| "private b"), &prev_b, 1)?;
 
         for _i in 3..10 {
-            let c_cell = chip.assign_row(
-                layouter.namespace(|| "next row"),
-                &prev_b,
-                &prev_c,
-            )?;
+            let c_cell = chip.assign_row(layouter.namespace(|| "next row"), &prev_b, &prev_c)?;
             prev_b = prev_c;
             prev_c = c_cell;
         }
@@ -189,7 +175,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
 
 mod tests {
     use super::MyCircuit;
-    use halo2_proofs::{pasta::Fp, circuit::Value, dev::MockProver};
+    use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
 
     #[test]
     fn test_example1() {
@@ -215,7 +201,6 @@ mod tests {
         // prover.assert_satisfied();
     }
 
-
     #[cfg(feature = "dev-graph")]
     #[test]
     fn plot_fibo1() {
@@ -225,7 +210,10 @@ mod tests {
         root.fill(&WHITE).unwrap();
         let root = root.titled("Fib 1 Layout", ("sans-serif", 60)).unwrap();
 
-        let circuit = MyCircuit::<Fp> { a: Value::unknown(), b: Value::unknown() };
+        let circuit = MyCircuit::<Fp> {
+            a: Value::unknown(),
+            b: Value::unknown(),
+        };
         halo2_proofs::dev::CircuitLayout::default()
             .render(4, &circuit, &root)
             .unwrap();

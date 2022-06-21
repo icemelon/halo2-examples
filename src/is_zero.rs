@@ -1,9 +1,4 @@
-use halo2_proofs::{
-    arithmetic::FieldExt,
-    circuit::*,
-    plonk::*,
-    poly::Rotation,
-};
+use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Clone, Debug)]
 pub struct IsZeroConfig<F> {
@@ -21,7 +16,7 @@ pub struct IsZeroChip<F: FieldExt> {
     config: IsZeroConfig<F>,
 }
 
-impl<F:FieldExt> IsZeroChip<F> {
+impl<F: FieldExt> IsZeroChip<F> {
     pub fn construct(config: IsZeroConfig<F>) -> Self {
         IsZeroChip { config }
     }
@@ -64,12 +59,7 @@ impl<F:FieldExt> IsZeroChip<F> {
         value: Value<F>,
     ) -> Result<(), Error> {
         let value_inv = value.map(|value| value.invert().unwrap_or(F::zero()));
-        region.assign_advice(
-            || "value inv",
-            self.config.value_inv,
-            offset,
-            || value_inv,
-        )?;
+        region.assign_advice(|| "value inv", self.config.value_inv, offset, || value_inv)?;
         Ok(())
     }
 }
