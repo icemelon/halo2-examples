@@ -1,3 +1,5 @@
+use std::default;
+
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{AssignedCell, Layouter, Value},
@@ -56,12 +58,15 @@ impl<F: FieldExt, const NUM_BITS: usize, const RANGE: usize> RangeCheckConfig<F,
             let num_bits = meta.query_advice(num_bits, Rotation::cur());
             let value = meta.query_advice(value, Rotation::cur());
 
-            // THIS IS BROKEN!!!!!!
-            // Hint: consider the case where q_lookup = 0. What are our input expressions to the lookup argument then?
-            vec![
-                (q_lookup.clone() * num_bits, table.num_bits),
-                (q_lookup * value, table.value),
-            ]
+            let not_q_lookup = Expression::Constant(F::one()) - q_lookup.clone();
+            let default_num_bits = Expression::Constant(F::one()); // 1-bit
+            let default_value = Expression::Constant(F::zero()); // 0 is a 1-bit value
+
+            let num_bits_expr =
+                q_lookup.clone() * num_bits + not_q_lookup.clone() * default_num_bits;
+            let value_expr = q_lookup * value + not_q_lookup * default_value;
+
+            vec![(num_bits_expr, table.num_bits), (value_expr, table.value)]
         });
 
         Self {
@@ -114,7 +119,7 @@ mod tests {
         circuit::floor_planner::V1,
         dev::{FailureLocation, MockProver, VerifyFailure},
         pasta::Fp,
-        plonk::{Any, Circuit},
+        plonk::Circuit,
     };
 
     use super::*;
