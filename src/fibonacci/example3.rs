@@ -2,8 +2,6 @@ use crate::is_zero::{IsZeroChip, IsZeroConfig};
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{AssignedCell, Layouter, SimpleFloorPlanner, Value},
-    dev::MockProver,
-    pasta::Fp,
     plonk::{Advice, Circuit, Column, ConstraintSystem, Error, Expression, Selector},
     poly::Rotation,
 };
@@ -18,6 +16,7 @@ struct FunctionConfig<F: FieldExt> {
     output: Column<Advice>,
 }
 
+#[derive(Debug, Clone)]
 struct FunctionChip<F: FieldExt> {
     config: FunctionConfig<F>,
 }
@@ -115,8 +114,10 @@ impl<F: FieldExt> Circuit<F> for FunctionCircuit<F> {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::*;
+    use halo2_proofs::{dev::MockProver, pasta::Fp};
 
     #[test]
     fn test_example3() {

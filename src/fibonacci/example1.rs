@@ -12,6 +12,7 @@ struct FiboConfig {
     pub instance: Column<Instance>,
 }
 
+#[derive(Debug, Clone)]
 struct FiboChip<F: FieldExt> {
     config: FiboConfig,
     _marker: PhantomData<F>,
@@ -59,6 +60,7 @@ impl<F: FieldExt> FiboChip<F> {
         }
     }
 
+    #[allow(clippy::type_complexity)]
     pub fn assign_first_row(
         &self,
         mut layouter: impl Layouter<F>,
@@ -173,6 +175,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     }
 }
 
+#[cfg(test)]
 mod tests {
     use super::MyCircuit;
     use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
@@ -196,9 +199,9 @@ mod tests {
         prover.assert_satisfied();
 
         public_input[2] += Fp::one();
-        let prover = MockProver::run(k, &circuit, vec![public_input]).unwrap();
+        let _prover = MockProver::run(k, &circuit, vec![public_input]).unwrap();
         // uncomment the following line and the assert will fail
-        // prover.assert_satisfied();
+        // _prover.assert_satisfied();
     }
 
     #[cfg(feature = "dev-graph")]
