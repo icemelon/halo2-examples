@@ -17,8 +17,6 @@ use table::*;
 ///          v_0     |         1           |      0      |       0       |
 ///          v_1     |         0           |      1      |       1       |
 ///
-/// We use a K-bit lookup table, that is tagged 1..=K, where the tag `i` marks an `i`-bit value.
-///
 
 #[derive(Debug, Clone)]
 /// A range-constrained value in the circuit produced by the RangeCheckConfig.
@@ -99,7 +97,7 @@ impl<F: FieldExt, const RANGE: usize, const LOOKUP_RANGE: usize>
         &self,
         mut layouter: impl Layouter<F>,
         value: Value<Assigned<F>>,
-    ) -> Result<RangeConstrained<F, RANGE>, Error> {
+    ) -> Result<RangeConstrained<F, LOOKUP_RANGE>, Error> {
         layouter.assign_region(
             || "Assign value for lookup range check",
             |mut region| {
