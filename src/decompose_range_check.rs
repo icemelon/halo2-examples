@@ -15,7 +15,7 @@ use halo2_proofs::{
 /// Assume for now that N | K, and define C = N / K.
 ///
 ///     value = [b_0, b_1, ..., b_{N-1}]   (little-endian)
-///           = c_0 + 2^K * c_1  + 2^{2K} * c_2 + ... + c_{C-1} * c_{C-1}
+///           = c_0 + 2^K * c_1  + 2^{2K} * c_2 + ... + 2^{(C-1)K} * c_{C-1}
 ///
 /// Initialise the running sum at
 ///                                 value = z_0.
@@ -44,6 +44,10 @@ use halo2_proofs::{
 
 #[derive(Debug, Clone)]
 struct DecomposeConfig<F: FieldExt, const LOOKUP_NUM_BITS: usize, const LOOKUP_RANGE: usize> {
+    // You'll need an advice column to witness your running sum;
+    // A selector to constrain the running sum;
+    // A selector to lookup the K-bit chunks;
+    // And of course, the K-bit lookup table
     table: RangeTableConfig<F, LOOKUP_NUM_BITS, LOOKUP_RANGE>,
     _marker: PhantomData<F>,
 }
@@ -65,6 +69,9 @@ impl<F: FieldExt, const LOOKUP_NUM_BITS: usize> DecomposeConfig<F, LOOKUP_NUM_BI
         value: AssignedCell<Assigned<F>, F>,
         num_bits: usize,
     ) -> Result<(), Error> {
+        // 1. Compute the interstitial running sum values {z_0, ..., z_C}}
+        // 2. Assign the running sum values
+        // 3. Make sure to enable the relevant selector on each row of the running sum
         todo!()
     }
 }
