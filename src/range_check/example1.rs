@@ -40,7 +40,8 @@ impl<F: FieldExt, const RANGE: usize> RangeCheckConfig<F, RANGE> {
             // Given a range R and a value v, returns the expression
             // (v) * (1 - v) * (2 - v) * ... * (R - 1 - v)
             let range_check = |range: usize, value: Expression<F>| {
-                (0..range).fold(value.clone(), |expr, i| {
+                assert!(range > 0);
+                (1..range).fold(value.clone(), |expr, i| {
                     expr * (Expression::Constant(F::from(i as u64)) - value.clone())
                 })
             };
