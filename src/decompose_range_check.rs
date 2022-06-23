@@ -56,9 +56,6 @@ impl<F: FieldExt, const LOOKUP_NUM_BITS: usize> DecomposeConfig<F, LOOKUP_NUM_BI
     fn configure(meta: &mut ConstraintSystem<F>) -> Self {
         // Create the needed columns and internal configs.
 
-        // Check that each interstitial value of the running sum is composed correctly from the previous one.
-        meta.create_gate(|| "z_{i+1} = (z_i - c_i) * 2^{-K}", |meta| todo!());
-
         // Range-constrain each K-bit chunk `c_i = z_i - z_{i+1} * 2^K` derived from the running sum.
         meta.lookup(|meta| todo!());
     }
@@ -69,9 +66,11 @@ impl<F: FieldExt, const LOOKUP_NUM_BITS: usize> DecomposeConfig<F, LOOKUP_NUM_BI
         value: AssignedCell<Assigned<F>, F>,
         num_bits: usize,
     ) -> Result<(), Error> {
+        // 0. Copy in the witnessed `value` 
         // 1. Compute the interstitial running sum values {z_0, ..., z_C}}
         // 2. Assign the running sum values
         // 3. Make sure to enable the relevant selector on each row of the running sum
+        // 4. Constrain the final running sum `z_C` to be 0.
         todo!()
     }
 }
