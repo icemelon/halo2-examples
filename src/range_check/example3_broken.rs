@@ -22,7 +22,7 @@ use table::*;
 ///          v_1     |      1      |        1         |       1       |
 ///          ...     |     ...     |        2         |       2       |
 ///          ...     |     ...     |        2         |       3       |
-///          ...     |     ...     |        2         |       4       |
+///          ...     |     ...     |        3         |       4       |
 ///
 /// We use a K-bit lookup table, that is tagged 1..=K, where the tag `i` marks an `i`-bit value.
 ///
