@@ -16,3 +16,4 @@ dev-graph = ["halo2_proofs/dev-graph", "plotters"]
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", rev = "a898d65ae3ad3d41987666f6a03cfc15edae01c4"}
 plotters = { version = "0.3.0", optional = true }
 tabbycat = { version = "0.1", features = ["attributes"], optional = true }
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }

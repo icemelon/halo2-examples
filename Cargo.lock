@@ -377,6 +377,7 @@ version = "0.1.0"
 dependencies = [
  "halo2_proofs",
  "plotters",
+ "rand_core",
  "tabbycat",
 ]
 
@@ -794,6 +795,9 @@ name = "rand_core"
 version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d34f1408f55294453790c48b2f1ebbb1c5b4b7563eb1f418bcfcfdbb06ebb4e7"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "rayon"
