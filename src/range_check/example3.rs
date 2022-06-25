@@ -1,12 +1,7 @@
-use std::default;
-
 use halo2_proofs::{
     arithmetic::FieldExt,
     circuit::{AssignedCell, Layouter, Value},
-    plonk::{
-        Advice, Assigned, Column, ConstraintSystem, Constraints, Error, Expression, Selector,
-        TableColumn,
-    },
+    plonk::{Advice, Assigned, Column, ConstraintSystem, Error, Expression, Selector},
     poly::Rotation,
 };
 
@@ -115,12 +110,7 @@ impl<F: FieldExt, const NUM_BITS: usize, const RANGE: usize> RangeCheckConfig<F,
 
 #[cfg(test)]
 mod tests {
-    use halo2_proofs::{
-        circuit::floor_planner::V1,
-        dev::{FailureLocation, MockProver, VerifyFailure},
-        pasta::Fp,
-        plonk::Circuit,
-    };
+    use halo2_proofs::{circuit::floor_planner::V1, dev::MockProver, pasta::Fp, plonk::Circuit};
 
     use super::*;
 
