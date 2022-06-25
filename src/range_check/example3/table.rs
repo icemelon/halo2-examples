@@ -70,7 +70,6 @@ impl<F: FieldExt, const NUM_BITS: usize, const RANGE: usize> RangeTableConfig<F,
                         )?;
                         offset += 1;
                     }
-
                 }
 
                 Ok(())
