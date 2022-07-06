@@ -20,6 +20,9 @@ pub fn init_panic_hook() {
     console_error_panic_hook::set_once();
 }
 
+pub use wasm_bindgen_rayon::init_thread_pool;
+
+
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
 use fibonacci::example1::MyCircuit;
