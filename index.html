@@ -6,9 +6,10 @@
   </head>
   <body>
     <script type="module">
-      import init, {greet, proofGen} from "./pkg/halo2_examples.js";
+      import init, {greet, proofGen, init_panic_hook} from "./pkg/halo2_examples.js";
       init()
         .then(() => {
+          init_panic_hook()
           greet("WebAssembly")
           proofGen("hiii")
         //   main()
@@ -16,4 +17,3 @@
     </script>
   </body>
 </html>
-  

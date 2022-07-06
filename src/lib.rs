@@ -3,6 +3,7 @@ mod is_zero;
 mod range_check;
 
 use wasm_bindgen::prelude::*;
+extern crate console_error_panic_hook;
 
 #[wasm_bindgen]
 extern {
@@ -12,6 +13,11 @@ extern {
 #[wasm_bindgen]
 pub fn greet(name: &str) {
     alert(&format!("Hello, {}!", name));
+}
+
+#[wasm_bindgen]
+pub fn init_panic_hook() {
+    console_error_panic_hook::set_once();
 }
 
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
@@ -34,22 +40,28 @@ pub fn proofGen(name: &str) {
     let a = Fp::from(1); // F[0]
     let b = Fp::from(1); // F[1]
     let out = Fp::from(55); // F[9]
+    alert("Line 37");
 
     let circuit = MyCircuit {
         a: Value::known(a),
         b: Value::known(b),
     };
+    alert("Line 43");
 
     let mut public_input = vec![a, b, out];
     const K: u32 = 5;
     let params: Params<EqAffine> = Params::new(K);
+    alert("line 48");
     let empty_circuit: MyCircuit<Fp> = MyCircuit {
         a: Value::unknown(),
         b: Value::unknown()
     };
+    alert("Line 52");
+
 
     let vk = keygen_vk(&params, &empty_circuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &empty_circuit).expect("keygen_pk should not fail");
+    alert("Line 56");
 
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
     // Create a proof
@@ -63,7 +75,10 @@ pub fn proofGen(name: &str) {
         &mut transcript,
     )
     .expect("proof generation should not fail");
+    alert("Line 70");
+
     let proof: Vec<u8> = transcript.finalize();
+    alert("Line 75");
 
 
 }
