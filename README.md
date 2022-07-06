@@ -22,3 +22,9 @@ Plot the circuit layout
 cargo test --all-features -- --nocapture plot_fibo1
 cargo test --all-features -- --nocapture plot_fibo2
 ```
+
+Wasm shenanigans
+```
+wasm-pack build --target web
+python3 -m http.server
+```

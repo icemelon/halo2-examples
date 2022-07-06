@@ -10,8 +10,20 @@ use halo2_proofs::poly::{commitment::Params};
 use halo2_proofs::pasta::{Eq, EqAffine};
 use rand_core::OsRng;
 use std::io::{self, Write};
+use wasm_bindgen::prelude::*;
 
-fn main() {
+#[wasm_bindgen]
+extern {
+    pub fn alert(s: &str);
+}
+
+#[wasm_bindgen]
+pub fn greet(name: &str) {
+    alert(&format!("Hello, {}!", name));
+}
+
+#[wasm_bindgen]
+pub fn main() {
     println!("Hello, world!");
     let k = 4;
 
@@ -54,7 +66,7 @@ fn main() {
         &pk,
         &[circuit.clone(), circuit.clone()],
         // public_
-        &[&[&[public_input[0]]], &[&[public_input[1]]], &[&[public_input[2]]]],
+        &[&[&public_input], &[&public_input]],
         OsRng,
         &mut transcript,
     )
@@ -74,8 +86,11 @@ fn main() {
         &params,
         pk.get_vk(),
         strategy,
-        &[&[&[public_input[0]]], &[&[public_input[1]]], &[&[public_input[2]]]],
+        &[&[&public_input], &[&public_input]],
         &mut transcript,
     )
     .is_ok());
+    println!(""); // Empty line
+    println!("Proof verified!");
+
 }
