@@ -6,17 +6,18 @@
   </head>
   <body>
     <script type="module">
-      var myHeaders = new Headers() // Currently empty
-      myHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp')
-      myHeaders.set('Cross-Origin-Opener-Policy', 'same-origin')
-      import init, {initThreadPool, greet, proofGen, init_panic_hook} from "./pkg/halo2_examples.js";
+      import init, {initThreadPool, greet, proofGen, init_panic_hook, sum_of_squares} from "./pkg/halo2_examples.js";
       init()
         .then(() => {
           init_panic_hook()
+          console.log("init panic hook")
           initThreadPool(navigator.hardwareConcurrency)
+          console.log("init thread pool")
+          console.log("hey")
+          res = sum_of_squares([1,2])
+          console.log("sum of squares res", res)
           greet("WebAssembly")
           proofGen("hiii")
-        //   main()
         });
     </script>
   </body>

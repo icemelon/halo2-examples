@@ -22,6 +22,14 @@ pub fn init_panic_hook() {
 
 pub use wasm_bindgen_rayon::init_thread_pool;
 
+use rayon::prelude::*;
+
+#[wasm_bindgen]
+pub fn sum_of_squares(input: &[i32]) -> i32 {
+    input.par_iter() // <-- just change that!
+         .map(|&i| i * i)
+         .sum()
+}
 
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};

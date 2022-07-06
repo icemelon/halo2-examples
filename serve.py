@@ -3,9 +3,13 @@
 from flask import Flask
 from flask import render_template
 from flask import make_response
+from flask import send_from_directory
+
 
 # creates a Flask application, named app
-app = Flask(__name__)
+app = Flask(__name__, 
+            static_url_path='', 
+            static_folder='pkg',)
 
 # a route where we will display a welcome message via an HTML template
 @app.route("/")
@@ -16,6 +20,10 @@ def hello():
 #     Cross-Origin-Embedder-Policy: require-corp
 # Cross-Origin-Opener-Policy: same-origin
     return resp
+
+@app.route('/pkg/<path:path>')
+def send_report(path):
+    return send_from_directory('pkg', path)
 
 # run the application
 if __name__ == "__main__":
