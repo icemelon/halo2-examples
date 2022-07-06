@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>hello-wasm example</title>
+  </head>
+  <body>
+    <script type="module">
+      var myHeaders = new Headers() // Currently empty
+      myHeaders.set('Cross-Origin-Embedder-Policy', 'require-corp')
+      myHeaders.set('Cross-Origin-Opener-Policy', 'same-origin')
+      import init, {initThreadPool, greet, proofGen, init_panic_hook} from "./pkg/halo2_examples.js";
+      init()
+        .then(() => {
+          init_panic_hook()
+          initThreadPool(navigator.hardwareConcurrency)
+          greet("WebAssembly")
+          proofGen("hiii")
+        //   main()
+        });
+    </script>
+  </body>
+</html>
