@@ -1,1 +1,1 @@
-src/pkg/*.js
+src/pkg/**/*.js
