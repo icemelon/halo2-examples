@@ -46,33 +46,33 @@ use std::io::{self, Write};
 
 #[wasm_bindgen]
 pub fn proofGen(name: &str) {
-    alert(&format!("Generating proof, {}!", name));
+    // alert(&format!("Generating proof, {}!", name));
 
     let a = Fp::from(1); // F[0]
     let b = Fp::from(1); // F[1]
     let out = Fp::from(55); // F[9]
-    alert("Line 37");
+    // alert("Line 37");
 
     let circuit = MyCircuit {
         a: Value::known(a),
         b: Value::known(b),
     };
-    alert("Line 43");
+    // alert("Line 43");
 
     let mut public_input = vec![a, b, out];
     const K: u32 = 5;
     let params: Params<EqAffine> = Params::new(K);
-    alert("line 48");
+    // alert("line 48");
     let empty_circuit: MyCircuit<Fp> = MyCircuit {
         a: Value::unknown(),
         b: Value::unknown()
     };
-    alert("Line 52");
+    // alert("Line 52");
 
 
     let vk = keygen_vk(&params, &empty_circuit).expect("keygen_vk should not fail");
     let pk = keygen_pk(&params, vk, &empty_circuit).expect("keygen_pk should not fail");
-    alert("Line 56");
+    // alert("Line 56");
 
     let mut transcript = Blake2bWrite::<_, _, Challenge255<_>>::init(vec![]);
     // Create a proof
@@ -86,10 +86,10 @@ pub fn proofGen(name: &str) {
         &mut transcript,
     )
     .expect("proof generation should not fail");
-    alert("Line 70");
+    // alert("Line 70");
 
     let proof: Vec<u8> = transcript.finalize();
-    alert("Line 75");
+    // alert("Line 75");
 
 
 }

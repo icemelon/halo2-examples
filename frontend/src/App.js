@@ -3,6 +3,15 @@ import './App.css';
 import init, {initThreadPool, greet, proofGen, init_panic_hook, sum_of_squares} from "./pkg/halo2_examples.js";
 import {useEffect} from 'react'
 import React from 'react'
+import * as Comlink from 'comlink';
+import { wrap } from 'comlink';
+
+function takeALongTimeToDoSomething() {
+  const worker = new Worker('./pkg', { name: 'my-first-worker', type: 'module' });
+  const workerApi = wrap<import('./pkg').MyFirstWorker>(worker);
+  workerApi.initThreadPool();    
+}
+
 
 function App() {
   useEffect(() => {
@@ -10,7 +19,8 @@ function App() {
       await init()
       await init_panic_hook()
       console.log("init panic hook done")
-      await initThreadPool(navigator.hardwareConcurrency)
+      // await initThreadPool(navigator.hardwareConcurrency)
+      takeALongTimeToDoSomething()
       console.log("init thread pool done")
       greet("WebAssembly")
       const res = sum_of_squares([1,2])
