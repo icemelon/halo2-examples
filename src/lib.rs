@@ -4,6 +4,7 @@ mod range_check;
 
 use wasm_bindgen::prelude::*;
 extern crate console_error_panic_hook;
+use serde::{Serialize, Deserialize};
 
 #[wasm_bindgen]
 extern {
@@ -45,7 +46,7 @@ use rand_core::OsRng;
 use std::io::{self, Write};
 
 #[wasm_bindgen]
-pub fn proofGen(name: &str) {
+pub fn proofGen(name: &str) -> JsValue {
     // alert(&format!("Generating proof, {}!", name));
 
     let a = Fp::from(1); // F[0]
@@ -90,6 +91,51 @@ pub fn proofGen(name: &str) {
 
     let proof: Vec<u8> = transcript.finalize();
     // alert("Line 75");
+    // JsValue::from_serde(&proof).unwrap();
+    JsValue::from_serde(&proof).unwrap()
 
 
+}
+
+
+#[wasm_bindgen]
+pub fn verifyProof(proofVec: &JsValue) -> bool {
+
+    let a = Fp::from(1); // F[0]
+    let b = Fp::from(1); // F[1]
+    let out = Fp::from(55); // F[9]
+    // alert("Line 37");
+
+    let circuit = MyCircuit {
+        a: Value::known(a),
+        b: Value::known(b),
+    };
+    // alert("Line 43");
+
+    let mut public_input = vec![a, b, out];
+    const K: u32 = 5;
+    let params: Params<EqAffine> = Params::new(K);
+    // alert("line 48");
+    let empty_circuit: MyCircuit<Fp> = MyCircuit {
+        a: Value::unknown(),
+        b: Value::unknown()
+    };
+    // alert("Line 52");
+    let vk = keygen_vk(&params, &empty_circuit).expect("keygen_vk should not fail");
+    let pk = keygen_pk(&params, vk, &empty_circuit).expect("keygen_pk should not fail");
+
+    // Now we have the proof, strategy, transcript
+    // proof instead of getting from .bin, get from the input
+    let proof: Vec<u8> = proofVec.into_serde::<Vec<u8>>().unwrap();
+    let strategy = SingleVerifier::new(&params);
+    let mut transcript = Blake2bRead::<_, _, Challenge255<_>>::init(&proof[..]);
+    verify_proof(
+        &params,
+        // &vk,
+        pk.get_vk(),
+        strategy,
+        &[&[&public_input], &[&public_input]],
+        &mut transcript,
+    )
+    .is_ok()
 }

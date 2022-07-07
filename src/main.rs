@@ -10,19 +10,19 @@ use halo2_proofs::poly::{commitment::Params};
 use halo2_proofs::pasta::{Eq, EqAffine};
 use rand_core::OsRng;
 use std::io::{self, Write};
-use wasm_bindgen::prelude::*;
+// use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
+// #[wasm_bindgen]
 extern {
     pub fn alert(s: &str);
 }
 
-#[wasm_bindgen]
-pub fn greet(name: &str) {
-    alert(&format!("Hello, {}!", name));
-}
+// #[wasm_bindgen]
+// pub fn greet(name: &str) {
+//     alert(&format!("Hello, {}!", name));
+// }
 
-#[wasm_bindgen]
+// #[wasm_bindgen]
 pub fn main() {
     println!("Hello, world!");
     let k = 4;

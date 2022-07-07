@@ -28,3 +28,5 @@ Wasm shenanigans
 wasm-pack build --target web
 python3 -m http.server
 ```
+
+cargo build --target x86_64-unknown-linux-gnu
