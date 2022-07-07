@@ -8,6 +8,7 @@ edition = "2021"
 [lib]
 name = "halo2_examples"
 path = "src/lib.rs"
+crate-type = ["cdylib", "rlib"]
 
 [features]
 dev-graph = ["halo2_proofs/dev-graph", "plotters"]
@@ -16,3 +17,12 @@ dev-graph = ["halo2_proofs/dev-graph", "plotters"]
 halo2_proofs = { git = "https://github.com/zcash/halo2.git", rev = "a898d65ae3ad3d41987666f6a03cfc15edae01c4"}
 plotters = { version = "0.3.0", optional = true }
 tabbycat = { version = "0.1", features = ["attributes"], optional = true }
+rand_core = { version = "0.6", default-features = false, features = ["getrandom"] }
+getrandom = { version = "0.2", features = ["js"]}
+serde = { version = "1.0", features = ["derive"] }
+
+[target.wasm32-unknown-unknown.dependencies]
+wasm-bindgen = { version = "0.2.81", features = ["serde-serialize"]}
+console_error_panic_hook = "0.1.7"
+rayon = "1.5"
+wasm-bindgen-rayon = { version = "1.0"}

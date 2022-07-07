@@ -3,17 +3,17 @@ use std::marker::PhantomData;
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Debug, Clone)]
-struct ACell<F: FieldExt>(AssignedCell<F, F>);
+pub struct ACell<F: FieldExt>(AssignedCell<F, F>);
 
 #[derive(Debug, Clone)]
-struct FiboConfig {
+pub struct FiboConfig {
     pub advice: [Column<Advice>; 3],
     pub selector: Selector,
     pub instance: Column<Instance>,
 }
 
 #[derive(Debug, Clone)]
-struct FiboChip<F: FieldExt> {
+pub struct FiboChip<F: FieldExt> {
     config: FiboConfig,
     _marker: PhantomData<F>,
 }
@@ -128,8 +128,8 @@ impl<F: FieldExt> FiboChip<F> {
     }
 }
 
-#[derive(Default)]
-struct MyCircuit<F> {
+#[derive(Default, Clone)]
+pub struct MyCircuit<F> {
     pub a: Value<F>,
     pub b: Value<F>,
 }
