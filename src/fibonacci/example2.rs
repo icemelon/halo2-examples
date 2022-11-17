@@ -113,42 +113,43 @@ impl<F: FieldExt> FibonacciChip<F> {
     }
 }
 
+#[derive(Default)]
+struct MyCircuit<F>(PhantomData<F>);
+
+impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
+    type Config = FibonacciConfig;
+    type FloorPlanner = SimpleFloorPlanner;
+
+    fn without_witnesses(&self) -> Self {
+        Self::default()
+    }
+
+    fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
+        let advice = meta.advice_column();
+        let instance = meta.instance_column();
+        FibonacciChip::configure(meta, advice, instance)
+    }
+
+    fn synthesize(
+        &self,
+        config: Self::Config,
+        mut layouter: impl Layouter<F>,
+    ) -> Result<(), Error> {
+        let chip = FibonacciChip::construct(config);
+
+        let out_cell = chip.assign(layouter.namespace(|| "entire table"), 10)?;
+
+        chip.expose_public(layouter.namespace(|| "out"), out_cell, 2)?;
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use super::MyCircuit;
+    use std::marker::PhantomData;
     use halo2_proofs::{dev::MockProver, pasta::Fp};
-
-    #[derive(Default)]
-    struct MyCircuit<F>(PhantomData<F>);
-
-    impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
-        type Config = FibonacciConfig;
-        type FloorPlanner = SimpleFloorPlanner;
-
-        fn without_witnesses(&self) -> Self {
-            Self::default()
-        }
-
-        fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-            let advice = meta.advice_column();
-            let instance = meta.instance_column();
-            FibonacciChip::configure(meta, advice, instance)
-        }
-
-        fn synthesize(
-            &self,
-            config: Self::Config,
-            mut layouter: impl Layouter<F>,
-        ) -> Result<(), Error> {
-            let chip = FibonacciChip::construct(config);
-
-            let out_cell = chip.assign(layouter.namespace(|| "entire table"), 10)?;
-
-            chip.expose_public(layouter.namespace(|| "out"), out_cell, 2)?;
-
-            Ok(())
-        }
-    }
 
     #[test]
     fn fibonacci_example2() {

@@ -3,7 +3,9 @@ use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 
 #[derive(Debug, Clone)]
 struct FibonacciConfig {
-    pub advice: [Column<Advice>; 3],
+    pub col_a: Column<Advice>,
+    pub col_b: Column<Advice>,
+    pub col_c: Column<Advice>,
     pub selector: Selector,
     pub instance: Column<Instance>,
 }
@@ -47,7 +49,9 @@ impl<F: FieldExt> FibonacciChip<F> {
         });
 
         FibonacciConfig {
-            advice: [col_a, col_b, col_c],
+            col_a,
+            col_b,
+            col_c,
             selector,
             instance,
         }
@@ -67,19 +71,19 @@ impl<F: FieldExt> FibonacciChip<F> {
                     || "f(0)",
                     self.config.instance,
                     0,
-                    self.config.advice[0],
+                    self.config.col_a,
                     0)?;
 
                 let b_cell = region.assign_advice_from_instance(
                     || "f(1)",
                     self.config.instance,
                     1,
-                    self.config.advice[1],
+                    self.config.col_b,
                     0)?;
 
                 let c_cell = region.assign_advice(
-                    || "add",
-                    self.config.advice[2],
+                    || "a + b",
+                    self.config.col_c,
                     0,
                     || a_cell.value().copied() + b_cell.value(),
                 )?;
@@ -104,19 +108,19 @@ impl<F: FieldExt> FibonacciChip<F> {
                 prev_b.copy_advice(
                     || "a",
                     &mut region,
-                    self.config.advice[0],
+                    self.config.col_a,
                     0,
                 )?;
                 prev_c.copy_advice(
                     || "b",
                     &mut region,
-                    self.config.advice[1],
+                    self.config.col_b,
                     0,
                 )?;
 
                 let c_cell = region.assign_advice(
                     || "c",
-                    self.config.advice[2],
+                    self.config.col_c,
                     0,
                     || prev_b.value().copied() + prev_c.value(),
                 )?;
