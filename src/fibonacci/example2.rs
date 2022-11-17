@@ -5,20 +5,20 @@ use std::marker::PhantomData;
 struct ACell<F: FieldExt>(AssignedCell<F, F>);
 
 #[derive(Debug, Clone)]
-struct FiboConfig {
+struct FibonacciConfig {
     advice: Column<Advice>,
     selector: Selector,
     instance: Column<Instance>,
 }
 
 #[derive(Debug, Clone)]
-struct FiboChip<F: FieldExt> {
-    config: FiboConfig,
+struct FibonacciChip<F: FieldExt> {
+    config: FibonacciConfig,
     _marker: PhantomData<F>,
 }
 
-impl<F: FieldExt> FiboChip<F> {
-    pub fn construct(config: FiboConfig) -> Self {
+impl<F: FieldExt> FibonacciChip<F> {
+    pub fn construct(config: FibonacciConfig) -> Self {
         Self {
             config,
             _marker: PhantomData,
@@ -29,7 +29,7 @@ impl<F: FieldExt> FiboChip<F> {
         meta: &mut ConstraintSystem<F>,
         advice: Column<Advice>,
         instance: Column<Instance>,
-    ) -> FiboConfig {
+    ) -> FibonacciConfig {
         let selector = meta.selector();
 
         meta.enable_equality(advice);
@@ -49,7 +49,7 @@ impl<F: FieldExt> FiboChip<F> {
             vec![s * (a + b - c)]
         });
 
-        FiboConfig {
+        FibonacciConfig {
             advice,
             selector,
             instance,
@@ -122,7 +122,7 @@ mod tests {
     struct MyCircuit<F>(PhantomData<F>);
 
     impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
-        type Config = FiboConfig;
+        type Config = FibonacciConfig;
         type FloorPlanner = SimpleFloorPlanner;
 
         fn without_witnesses(&self) -> Self {
@@ -132,7 +132,7 @@ mod tests {
         fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
             let advice = meta.advice_column();
             let instance = meta.instance_column();
-            FiboChip::configure(meta, advice, instance)
+            FibonacciChip::configure(meta, advice, instance)
         }
 
         fn synthesize(
@@ -140,7 +140,7 @@ mod tests {
             config: Self::Config,
             mut layouter: impl Layouter<F>,
         ) -> Result<(), Error> {
-            let chip = FiboChip::construct(config);
+            let chip = FibonacciChip::construct(config);
 
             let out_cell = chip.assign(layouter.namespace(|| "entire table"), 10)?;
 
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn test_example2() {
+    fn fibonacci_example2() {
         let k = 4;
 
         let a = Fp::from(1); // F[0]

@@ -6,35 +6,32 @@ use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
 struct ACell<F: FieldExt>(AssignedCell<F, F>);
 
 #[derive(Debug, Clone)]
-struct FiboConfig {
+struct FibonacciConfig {
     pub advice: [Column<Advice>; 3],
     pub selector: Selector,
     pub instance: Column<Instance>,
 }
 
 #[derive(Debug, Clone)]
-struct FiboChip<F: FieldExt> {
-    config: FiboConfig,
+struct FibonacciChip<F: FieldExt> {
+    config: FibonacciConfig,
     _marker: PhantomData<F>,
 }
 
-impl<F: FieldExt> FiboChip<F> {
-    pub fn construct(config: FiboConfig) -> Self {
+impl<F: FieldExt> FibonacciChip<F> {
+    pub fn construct(config: FibonacciConfig) -> Self {
         Self {
             config,
             _marker: PhantomData,
         }
     }
 
-    pub fn configure(
-        meta: &mut ConstraintSystem<F>,
-        advice: [Column<Advice>; 3],
-        instance: Column<Instance>,
-    ) -> FiboConfig {
-        let col_a = advice[0];
-        let col_b = advice[1];
-        let col_c = advice[2];
+    pub fn configure(meta: &mut ConstraintSystem<F>) -> FibonacciConfig {
+        let col_a = meta.advice_column();
+        let col_b = meta.advice_column();
+        let col_c = meta.advice_column();
         let selector = meta.selector();
+        let instance = meta.instance_column();
 
         meta.enable_equality(col_a);
         meta.enable_equality(col_b);
@@ -53,7 +50,7 @@ impl<F: FieldExt> FiboChip<F> {
             vec![s * (a + b - c)]
         });
 
-        FiboConfig {
+        FibonacciConfig {
             advice: [col_a, col_b, col_c],
             selector,
             instance,
@@ -135,7 +132,7 @@ struct MyCircuit<F> {
 }
 
 impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
-    type Config = FiboConfig;
+    type Config = FibonacciConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
     fn without_witnesses(&self) -> Self {
@@ -143,11 +140,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     }
 
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
-        let col_a = meta.advice_column();
-        let col_b = meta.advice_column();
-        let col_c = meta.advice_column();
-        let instance = meta.instance_column();
-        FiboChip::configure(meta, [col_a, col_b, col_c], instance)
+        FibonacciChip::configure(meta)
     }
 
     fn synthesize(
@@ -155,7 +148,7 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
         config: Self::Config,
         mut layouter: impl Layouter<F>,
     ) -> Result<(), Error> {
-        let chip = FiboChip::construct(config);
+        let chip = FibonacciChip::construct(config);
 
         let (prev_a, mut prev_b, mut prev_c) =
             chip.assign_first_row(layouter.namespace(|| "first row"), self.a, self.b)?;
@@ -181,7 +174,7 @@ mod tests {
     use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
 
     #[test]
-    fn test_example1() {
+    fn fibonacci_example1() {
         let k = 4;
 
         let a = Fp::from(1); // F[0]
@@ -206,7 +199,7 @@ mod tests {
 
     #[cfg(feature = "dev-graph")]
     #[test]
-    fn plot_fibo1() {
+    fn plot_fibonacci1() {
         use plotters::prelude::*;
 
         let root = BitMapBackend::new("fib-1-layout.png", (1024, 3096)).into_drawing_area();
