@@ -1,9 +1,5 @@
 use std::marker::PhantomData;
-
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
-
-#[derive(Debug, Clone)]
-struct ACell<F: FieldExt>(AssignedCell<F, F>);
 
 #[derive(Debug, Clone)]
 struct FibonacciConfig {
@@ -61,25 +57,32 @@ impl<F: FieldExt> FibonacciChip<F> {
     pub fn assign_first_row(
         &self,
         mut layouter: impl Layouter<F>,
-        a: Value<F>,
-        b: Value<F>,
-    ) -> Result<(ACell<F>, ACell<F>, ACell<F>), Error> {
+    ) -> Result<(AssignedCell<F, F>, AssignedCell<F, F>, AssignedCell<F, F>), Error> {
         layouter.assign_region(
             || "first row",
             |mut region| {
                 self.config.selector.enable(&mut region, 0)?;
 
-                let a_cell = region
-                    .assign_advice(|| "a", self.config.advice[0], 0, || a)
-                    .map(ACell)?;
+                let a_cell = region.assign_advice_from_instance(
+                    || "f(0)",
+                    self.config.instance,
+                    0,
+                    self.config.advice[0],
+                    0)?;
 
-                let b_cell = region
-                    .assign_advice(|| "b", self.config.advice[1], 0, || b)
-                    .map(ACell)?;
+                let b_cell = region.assign_advice_from_instance(
+                    || "f(1)",
+                    self.config.instance,
+                    1,
+                    self.config.advice[1],
+                    0)?;
 
-                let c_cell = region
-                    .assign_advice(|| "c", self.config.advice[2], 0, || a + b)
-                    .map(ACell)?;
+                let c_cell = region.assign_advice(
+                    || "add",
+                    self.config.advice[2],
+                    0,
+                    || a_cell.value().copied() + b_cell.value(),
+                )?;
 
                 Ok((a_cell, b_cell, c_cell))
             },
@@ -89,26 +92,34 @@ impl<F: FieldExt> FibonacciChip<F> {
     pub fn assign_row(
         &self,
         mut layouter: impl Layouter<F>,
-        prev_b: &ACell<F>,
-        prev_c: &ACell<F>,
-    ) -> Result<ACell<F>, Error> {
+        prev_b: &AssignedCell<F, F>,
+        prev_c: &AssignedCell<F, F>,
+    ) -> Result<AssignedCell<F, F>, Error> {
         layouter.assign_region(
             || "next row",
             |mut region| {
                 self.config.selector.enable(&mut region, 0)?;
 
-                prev_b
-                    .0
-                    .copy_advice(|| "a", &mut region, self.config.advice[0], 0)?;
-                prev_c
-                    .0
-                    .copy_advice(|| "b", &mut region, self.config.advice[1], 0)?;
+                // Copy the value from b & c in previous row to a & b in current row
+                prev_b.copy_advice(
+                    || "a",
+                    &mut region,
+                    self.config.advice[0],
+                    0,
+                )?;
+                prev_c.copy_advice(
+                    || "b",
+                    &mut region,
+                    self.config.advice[1],
+                    0,
+                )?;
 
-                let c_val = prev_b.0.value().copied() + prev_c.0.value();
-
-                let c_cell = region
-                    .assign_advice(|| "c", self.config.advice[2], 0, || c_val)
-                    .map(ACell)?;
+                let c_cell = region.assign_advice(
+                    || "c",
+                    self.config.advice[2],
+                    0,
+                    || prev_b.value().copied() + prev_c.value(),
+                )?;
 
                 Ok(c_cell)
             },
@@ -118,18 +129,15 @@ impl<F: FieldExt> FibonacciChip<F> {
     pub fn expose_public(
         &self,
         mut layouter: impl Layouter<F>,
-        cell: &ACell<F>,
+        cell: &AssignedCell<F, F>,
         row: usize,
     ) -> Result<(), Error> {
-        layouter.constrain_instance(cell.0.cell(), self.config.instance, row)
+        layouter.constrain_instance(cell.cell(), self.config.instance, row)
     }
 }
 
 #[derive(Default)]
-struct MyCircuit<F> {
-    pub a: Value<F>,
-    pub b: Value<F>,
-}
+struct MyCircuit<F>(PhantomData<F>);
 
 impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     type Config = FibonacciConfig;
@@ -150,11 +158,8 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     ) -> Result<(), Error> {
         let chip = FibonacciChip::construct(config);
 
-        let (prev_a, mut prev_b, mut prev_c) =
-            chip.assign_first_row(layouter.namespace(|| "first row"), self.a, self.b)?;
-
-        chip.expose_public(layouter.namespace(|| "private a"), &prev_a, 0)?;
-        chip.expose_public(layouter.namespace(|| "private b"), &prev_b, 1)?;
+        let (_, mut prev_b, mut prev_c) =
+            chip.assign_first_row(layouter.namespace(|| "first row"))?;
 
         for _i in 3..10 {
             let c_cell = chip.assign_row(layouter.namespace(|| "next row"), &prev_b, &prev_c)?;
@@ -170,8 +175,10 @@ impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
 
 #[cfg(test)]
 mod tests {
+    use std::marker::PhantomData;
+
     use super::MyCircuit;
-    use halo2_proofs::{circuit::Value, dev::MockProver, pasta::Fp};
+    use halo2_proofs::{dev::MockProver, pasta::Fp};
 
     #[test]
     fn fibonacci_example1() {
@@ -181,10 +188,7 @@ mod tests {
         let b = Fp::from(1); // F[1]
         let out = Fp::from(55); // F[9]
 
-        let circuit = MyCircuit {
-            a: Value::known(a),
-            b: Value::known(b),
-        };
+        let circuit = MyCircuit(PhantomData);
 
         let mut public_input = vec![a, b, out];
 
@@ -206,10 +210,7 @@ mod tests {
         root.fill(&WHITE).unwrap();
         let root = root.titled("Fib 1 Layout", ("sans-serif", 60)).unwrap();
 
-        let circuit = MyCircuit::<Fp> {
-            a: Value::unknown(),
-            b: Value::unknown(),
-        };
+        let circuit = MyCircuit::<Fp>(PhantomData);
         halo2_proofs::dev::CircuitLayout::default()
             .render(4, &circuit, &root)
             .unwrap();

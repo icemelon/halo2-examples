@@ -139,7 +139,7 @@ impl<F: FieldExt> FibonacciChip<F> {
                     0,
                 )?;
                 let mut c_cell = region.assign_advice(
-                    || "advice",
+                    || "add",
                     self.config.advice[2],
                     0,
                     || a_cell.value().copied() + b_cell.value(),
@@ -147,8 +147,18 @@ impl<F: FieldExt> FibonacciChip<F> {
 
                 // assign the rest of rows
                 for row in 1..nrows {
-                    b_cell.copy_advice(|| "a", &mut region, self.config.advice[0], row)?;
-                    c_cell.copy_advice(|| "b", &mut region, self.config.advice[1], row)?;
+                    b_cell.copy_advice(
+                        || "a",
+                        &mut region,
+                        self.config.advice[0],
+                        row,
+                    )?;
+                    c_cell.copy_advice(
+                        || "b",
+                        &mut region,
+                        self.config.advice[1],
+                        row,
+                    )?;
 
                     let new_c_cell = if row % 2 == 0 {
                         self.config.s_add.enable(&mut region, row)?;
