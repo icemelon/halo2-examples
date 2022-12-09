@@ -1,7 +1,10 @@
-use std::marker::PhantomData;
 use halo2_proofs::{arithmetic::FieldExt, circuit::*, plonk::*, poly::Rotation};
+use std::marker::PhantomData;
 
 #[derive(Debug, Clone)]
+
+// Defines the configuration of all the columns, and all of the column definitions
+// Will be incrementally populated and passed around
 struct FibonacciConfig {
     pub col_a: Column<Advice>,
     pub col_b: Column<Advice>,
@@ -14,9 +17,14 @@ struct FibonacciConfig {
 struct FibonacciChip<F: FieldExt> {
     config: FibonacciConfig,
     _marker: PhantomData<F>,
+    // In rust, when you have a struct that is generic over a type parameter (here F),
+    // but the type parameter is not referenced in a field of the struct,
+    // you have to use PhantomData to virtually reference the type parameter,
+    // so that the compiler can track it.  Otherwise it would give an error. - Jason
 }
 
 impl<F: FieldExt> FibonacciChip<F> {
+    // Default constructor
     pub fn construct(config: FibonacciConfig) -> Self {
         Self {
             config,
@@ -24,6 +32,7 @@ impl<F: FieldExt> FibonacciChip<F> {
         }
     }
 
+    // Configure will set what type of columns things are, enable equality, create gates, and return a config with all the gates
     pub fn configure(meta: &mut ConstraintSystem<F>) -> FibonacciConfig {
         let col_a = meta.advice_column();
         let col_b = meta.advice_column();
@@ -31,11 +40,14 @@ impl<F: FieldExt> FibonacciChip<F> {
         let selector = meta.selector();
         let instance = meta.instance_column();
 
+        // enable_equality has some cost, so we only want to define it on rows where we need copy constraints
         meta.enable_equality(col_a);
         meta.enable_equality(col_b);
         meta.enable_equality(col_c);
         meta.enable_equality(instance);
 
+        // Defining a create_gate here applies it over every single column in the circuit.
+        // We will use the selector column to decide when to turn this gate on and off, since we probably don't want it on every row
         meta.create_gate("add", |meta| {
             //
             // col_a | col_b | col_c | selector
@@ -57,6 +69,9 @@ impl<F: FieldExt> FibonacciChip<F> {
         }
     }
 
+    // These assign functions are to be called by the synthesizer, and will be used to assign values to the columns (the witness)
+    // The layouter will collect all the region definitions and compress it horizontally (i.e. squeeze up/down)
+    // but not vertically (i.e. will not squeeze left/right, at least right now)
     #[allow(clippy::type_complexity)]
     pub fn assign_first_row(
         &self,
@@ -72,14 +87,16 @@ impl<F: FieldExt> FibonacciChip<F> {
                     self.config.instance,
                     0,
                     self.config.col_a,
-                    0)?;
+                    0,
+                )?;
 
                 let b_cell = region.assign_advice_from_instance(
                     || "f(1)",
                     self.config.instance,
                     1,
                     self.config.col_b,
-                    0)?;
+                    0,
+                )?;
 
                 let c_cell = region.assign_advice(
                     || "a + b",
@@ -93,6 +110,7 @@ impl<F: FieldExt> FibonacciChip<F> {
         )
     }
 
+    // This will be repeatedly called. Note that each time it makes a new region, comprised of a, b, c, s that happen to all be in the same row
     pub fn assign_row(
         &self,
         mut layouter: impl Layouter<F>,
@@ -105,18 +123,8 @@ impl<F: FieldExt> FibonacciChip<F> {
                 self.config.selector.enable(&mut region, 0)?;
 
                 // Copy the value from b & c in previous row to a & b in current row
-                prev_b.copy_advice(
-                    || "a",
-                    &mut region,
-                    self.config.col_a,
-                    0,
-                )?;
-                prev_c.copy_advice(
-                    || "b",
-                    &mut region,
-                    self.config.col_b,
-                    0,
-                )?;
+                prev_b.copy_advice(|| "a", &mut region, self.config.col_a, 0)?;
+                prev_c.copy_advice(|| "b", &mut region, self.config.col_b, 0)?;
 
                 let c_cell = region.assign_advice(
                     || "c",
@@ -143,18 +151,25 @@ impl<F: FieldExt> FibonacciChip<F> {
 #[derive(Default)]
 struct MyCircuit<F>(PhantomData<F>);
 
+// Our circuit will instantiate an instance based on the interface defined on the chip and floorplanner (layouter)
+// There isn't a clear reason this and the chip aren't the same thing, except for better abstractions for complex circuits
 impl<F: FieldExt> Circuit<F> for MyCircuit<F> {
     type Config = FibonacciConfig;
     type FloorPlanner = SimpleFloorPlanner;
 
+    // Circuit without witnesses, called only during key generation
     fn without_witnesses(&self) -> Self {
         Self::default()
     }
 
+    // Has the arrangement of columns. Called only during keygen, and will just call chip config most of the time
     fn configure(meta: &mut ConstraintSystem<F>) -> Self::Config {
         FibonacciChip::configure(meta)
     }
 
+    // Take the output of configure and floorplanner type to make the actual circuit
+    // Called both at key generation time, and proving time with a specific witness
+    // Will call all of the copy constraints
     fn synthesize(
         &self,
         config: Self::Config,
@@ -196,7 +211,9 @@ mod tests {
 
         let mut public_input = vec![a, b, out];
 
+        // This prover is faster and 'fake', but is mostly a devtool for debugging
         let prover = MockProver::run(k, &circuit, vec![public_input.clone()]).unwrap();
+        // This function will pretty-print on errors
         prover.assert_satisfied();
 
         public_input[2] += Fp::one();
